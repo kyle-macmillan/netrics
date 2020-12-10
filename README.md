@@ -15,5 +15,5 @@ To run these tests, please:
 * if you do not want to run the InfluxCloud instance, remove that call, [here](https://github.com/JamesSaxon/netrics/blob/master/net_measures.py#L317)
 * take a look at `./net_measures.py -h`, and try all of the tests you might run.
   The available software varies from machine to machine, so this is not super robust.
-* install those tests in a reasonable schedule, via `crontab -e`.  See for instance [crontab](https://github.com/JamesSaxon/netrics/blob/master/z_crontab)
+* install those tests in a reasonable schedule, via `crontab -e`.  See for instance [crontab](https://github.com/JamesSaxon/netrics/blob/master/crontab)
 
