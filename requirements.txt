@@ -1,0 +1,6 @@
+influxdb_client
+netrc
+influxdb_client
+pandas
+selenium
+speedtest-cli
