@@ -3,7 +3,7 @@
 To run these tests, please:
 * check out this repository
   ```
-  git clone git@github.com:JamesSaxon/netrics.git
+  git clone https://github.com/JamesSaxon/netrics.git
   ```
 * consult the requirements file, and make sure these are installed.
   You may also need a variety of tools.  This worked for me
