@@ -7,9 +7,9 @@ import time
 from datetime import datetime
 
 from influxdb_client.client.write_api import SYNCHRONOUS
-from influxdb_client import InfluxDBClient
+from influxdb import InfluxDBClient
 
-from netrc import netrc
+
 
 
 from measure import Measurements
@@ -51,7 +51,7 @@ def execute():
         test.iperf3_bandwidth(
                 client=args.iperf[0], port=args.iperf[1], reverse=True)
 
-        print(args.upload)
+        """ Upload data to influx server """
         upload(args.upload[0], args.upload[0], args.upload[1], args.upload[2],
                 args.upload[3], args.upload[4], args.upload[5], test.results)
 
@@ -154,15 +154,11 @@ def upload(upload_results, host, port, username, password,
     if not upload_results:
         return
 
-    influx_url = "https://us-east-1-1.aws.cloud2.influxdata.com/"
-    influx_orgID, _, influx_token = netrc().authenticators("influx")
-    influx_client = InfluxDBClient(url = influx_url, orgID = influx_orgID, token = influx_token)
-    influx_write = influx_client.write_api(write_options = SYNCHRONOUS).write
-
+    print(measurements)
     creds = InfluxDBClient(host=host, port=port, username=username,
                 password=password, database=database, ssl=True, verify_ssl=True)
 
-    creds.write_points([{"measurements": "networks",
+    creds.write_points([{"measurement": "networks",
                          "tags"        : {"install": deployment},
                          "fields"      : measurements,
                          "time"        : datetime.utcnow()

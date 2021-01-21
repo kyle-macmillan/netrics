@@ -15,17 +15,18 @@ import pandas as pd
 from speedtest import Speedtest
 
 reference_site_dict = {
-        "google"    : "google.com",
-        "youtube"   : "youtube.com",
-        "facebook"  : "facebook.com",
-        "amazon"    : "amazon.com",
-        "wikipedia" : "wikipedia.org",
-        "tribune"   : "www.chicagotribune.com",
-        "suntimes"  : "chicago.suntimes.com",
-        "uchicago"  : "cs.uchicago.edu"
+        "google.com"             : "google",
+        "youtube.com"            : "youtube",
+        "facebook.com"           : "facebook", 
+        "amazon.com"             : "amazon", 
+        "wikipedia.org"          : "wikipedia",
+        "www.chicagotribune.com" : "tribune", 
+        "chicago.suntimes.com"   : "suntimes",
+        "cs.uchicago.edu"        : "uchicago"
 }
 
-reference_sites = list(reference_site_dict.values())
+
+reference_sites = list(reference_site_dict.keys())
 
 class Measurements:
     """ Take network measurements """
@@ -34,13 +35,20 @@ class Measurements:
         self.results = {}
         self.quiet = args.quiet
         self.sites = reference_sites
+        self.labels = reference_site_dict
 
         if not self.quiet:
             print("\n --- NETWORK MEASUREMENTS ---")
 
     def update_sites(self, sites):
-        test_sites = open(sites, 'r')
-        self.sites = test_sites.readlines()
+        self.labels = {}
+
+        with open(sites) as f:
+            for line in f:
+                (website, label) = line.split()
+                self.labels[website] = label
+
+        self.sites = list(self.labels.keys())
 
     def speed(self, run_test):
         
@@ -77,7 +85,7 @@ class Measurements:
                     ping_res)[0]
             ping_rtt_ms = [float(v) for v in ping_rtt_ms]
 
-            label = site.strip('\n')
+            label = self.labels[site]
 
             self.results[label + "_packet_loss_pct"] = ping_pkt_loss
             self.results[label  + "_rtt_min_ms"]      = ping_rtt_ms[0]
@@ -153,11 +161,14 @@ class Measurements:
         if len(tr_res):
             hops = int(tr_res[0])
 
-        self.results[f'hops_to_{site}'] = hops
+        label = self.labels[site]
+        print(label)
+
+        self.results[f'hops_to_{label}'] = hops
 
         if not self.quiet:
             print(f'\n --- Hops to Target ---')
-            print("Hops to {}: {}".format(site, self.results[f'hops_to_{site}']))
+            print("Hops to {}: {}".format(site, self.results[f'hops_to_{label}']))
 
     def connected_devices_arp(self, run_test, device_file='seen_devices.csv'):
 
