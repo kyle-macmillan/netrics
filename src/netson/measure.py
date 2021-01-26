@@ -15,11 +15,11 @@ import pandas as pd
 from speedtest import Speedtest
 
 reference_site_dict = {
-        "google.com"             : "google",
-        "youtube.com"            : "youtube",
-        "facebook.com"           : "facebook", 
-        "amazon.com"             : "amazon", 
-        "wikipedia.org"          : "wikipedia",
+        "www.google.com"             : "google",
+        "www.youtube.com"            : "youtube",
+        "www.facebook.com"           : "facebook", 
+        "www.amazon.com"             : "amazon", 
+        "www.wikipedia.org"          : "wikipedia",
         "www.chicagotribune.com" : "tribune", 
         "chicago.suntimes.com"   : "suntimes",
         "cs.uchicago.edu"        : "uchicago"
@@ -77,7 +77,7 @@ class Measurements:
         for site in self.sites:
             ping_cmd = "ping -i {:.2f} -c {:d} -w {:d} {:s}".format(0.25, 10, 5, site)
             ping_res = Popen(ping_cmd, shell=True, stdout=PIPE).stdout.read().decode('utf-8')
-            
+ 
             ping_pkt_loss = float(re.findall(', ([0-9.]*)% packet loss', 
                     ping_res, re.MULTILINE)[0])
 
@@ -162,7 +162,6 @@ class Measurements:
             hops = int(tr_res[0])
 
         label = self.labels[site]
-        print(label)
 
         self.results[f'hops_to_{label}'] = hops
 
@@ -234,7 +233,7 @@ class Measurements:
         ul_dl = "download" if reverse else "upload"
 
         self.results[f'iperf_udp_{ul_dl}'] = iperf_rate
-        self.results[f'iperf_udp_{ul_dl}'] = iperf_jitter
+        self.results[f'iperf_udp_{ul_dl}_jitter_ms'] = iperf_jitter
 
         if not self.quiet:
             if not reverse: print('\n --- iperf Bandwidth and Jitter ---')

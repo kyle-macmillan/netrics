@@ -4,16 +4,13 @@ import argparse
 import pathlib
 import re
 import time
+import netrc
 from datetime import datetime
 
 from influxdb_client.client.write_api import SYNCHRONOUS
 from influxdb import InfluxDBClient
 
-
-
-
 from measure import Measurements
-
 
 def execute():
     """ Execute the netson CLI command """
@@ -53,7 +50,7 @@ def execute():
 
         """ Upload data to influx server """
         upload(args.upload[0], args.upload[0], args.upload[1], args.upload[2],
-                args.upload[3], args.upload[4], args.upload[5], test.results)
+                args.upload[3], test.results)
 
     except KeyboardInterrupt:
         print("\n ******** KEYBOARD INTERRUPT ********** \n")
@@ -70,11 +67,11 @@ def build_parser():
     parser.add_argument(
             '-u',
             default=[False],
-            nargs = 6,
+            nargs = 4,
             dest = 'upload',
             action='store',
             help=("Upload measurements to influx. Usage:"  
-            "'-u [host] [port] [username] [password] [database] [deployment]'")
+            "'-u [host] [port] [database] [deployment]'")
     )
 
     parser.add_argument(
@@ -101,7 +98,7 @@ def build_parser():
     parser.add_argument(
             '-b', '--backbone',
             default=False,
-            const='google.com',
+            const='www.google.com',
             nargs='?',
             action='store',
             help='Count hops to Chicago backbone (ibone)'
@@ -110,7 +107,7 @@ def build_parser():
     parser.add_argument(
             '-t', '--target',
             default=False,
-            const='google.com',
+            const='www.google.com',
             nargs='?',
             action='store',
             help='Count hops to target website'
@@ -148,15 +145,16 @@ def build_parser():
     return parser   
 
 
-def upload(upload_results, host, port, username, password, 
-        database, deployment, measurements):
+def upload(upload_results, host, port,database, deployment, measurements):
 
     if not upload_results:
         return
 
-    print(measurements)
-    creds = InfluxDBClient(host=host, port=port, username=username,
-                password=password, database=database, ssl=True, verify_ssl=True)
+    netrc_file = netrc.netrc()
+    authTokens = netrc_file.authenticators("influx")
+
+    creds = InfluxDBClient(host=host, port=port, username=authTokens[0],
+                password=authTokens[2], database=database, ssl=True, verify_ssl=True)
 
     creds.write_points([{"measurement": "networks",
                          "tags"        : {"install": deployment},
