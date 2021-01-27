@@ -16,4 +16,26 @@ To run these tests, please:
 * take a look at `./net_measures.py -h`, and try all of the tests you might run.
   The available software varies from machine to machine, so this is not super robust.
 * install those tests in a reasonable schedule, via `crontab -e`.  See for instance [crontab](https://github.com/JamesSaxon/netrics/blob/master/crontab)
+## Setup for Jetson
 
+Enter your home directory: Run `cd ~` if necessary. 
+
+Run `git clone https://github.com/kyle-macmillan/netrics.git`
+
+Run `sudo ./~/netrics/setup.sh` to update system and install system dependencies.
+
+Run `python3 -m venv env/netson && source env/netson/bin/activate` to create and activate 
+the virtual environment.
+
+You must create a `.netrc` file in your home directory. In `.netrc`, write:
+```
+machine influx
+login influx_login
+password influx_password
+```
+Replacing `influx_login` and `influx_password` with your username and password.
+
+Run `chmod og-rw /home/your-name/.netrc`, replacing 'your-name' with the parent directory of 
+the `.netrc` file. 
+
+Run `./~/netrics/netson.sh deployment`, replacing 'deployment' with the name of your deployment.
