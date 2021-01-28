@@ -22,7 +22,7 @@ Enter your home directory: Run `cd ~` if necessary.
 
 Run `git clone https://github.com/kyle-macmillan/netrics.git`
 
-Run `sudo ./~/netrics/setup.sh` to update system and install system dependencies.
+Run `sudo ./netrics/setup.sh` to update system and install system dependencies.
 
 Run `python3 -m venv env/netson && source env/netson/bin/activate` to create and activate 
 the virtual environment.
@@ -38,4 +38,4 @@ Replacing `influx_login` and `influx_password` with your username and password.
 Run `chmod og-rw /home/your-name/.netrc`, replacing 'your-name' with the parent directory of 
 the `.netrc` file. 
 
-Run `./~/netrics/netson.sh deployment`, replacing 'deployment' with the name of your deployment.
+Run `./netrics/netson.sh deployment`, replacing 'deployment' with the name of your deployment.
