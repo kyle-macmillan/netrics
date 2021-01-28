@@ -22,8 +22,8 @@ Enter your home directory: Run `cd ~` if necessary.
 
 Run `git clone https://github.com/kyle-macmillan/netrics.git`
 
-Run `sudo ./netrics/setup.sh` to update system and install system dependencies. You
-will need to enter "yes" or "y" several times while this runs.
+Run `sudo ./netrics/setup.sh` to update system and install system dependencies. 
+
 
 Run `python3 -m venv env/netson && source env/netson/bin/activate` to create and activate 
 the virtual environment.
