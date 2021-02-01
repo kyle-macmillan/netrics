@@ -35,5 +35,7 @@ and deployment, respectively.
 Run `chmod og-rw /home/your-name/.netrc`, replacing 'your-name' with the parent directory of 
 the `.netrc` file. 
 
-Run `sudo ./netrics/setup.sh` to update and install dependencies and automate measurements.
+Run `sudo ./netrics/setup.sh` to update and install dependencies.
+
+Run ` ./netrics/netson.sh` to automate measurements.
  

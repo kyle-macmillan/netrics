@@ -18,15 +18,3 @@ pip3 install influxdb
 
 echo '\n\n --- Adding permissions ---'
 chmod a+rwx seen_devices.csv
-
-echo '\n\n--- Automating Measurements ---'
-
-crontab -l > mycron
-
-echo "0-14, 18-44, 48-59  *   *   *   *  python3 ~/netrics/src/netson -p -d -t -b -n -u " >> mycron
-
-echo "15 */2 * * *  python3 ~/netrics/src/netson -s -u" >> mycron
-
-crontab mycron
-rm mycron
-
