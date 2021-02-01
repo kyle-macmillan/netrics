@@ -176,7 +176,11 @@ class Measurements:
 
         ts = int(time.time())
 
-        nmap_cmd = "nmap -sn 10.0.0.0/24"
+        route_cmd = "ip r | awk 'NR==2' | awk '{print $1;}'"
+        subnet = Popen(route_cmd, shell=True, 
+                stdout=PIPE).stdout.read().decode('utf-8')
+
+        nmap_cmd = f'nmap -sn {subnet}'
         Popen(nmap_cmd, shell=True, stdout=PIPE)
 
         arp_cmd = ("arp -e -i eth0 | grep : | grep -v '_gateway' | tr -s ' ' | "
@@ -219,16 +223,30 @@ class Measurements:
          
         if not client:
             return
+    
+        bandwidth = self.results["speedtest_upload"]
+        if reverse:
+            bandwidth = self.results["speedtest_download"]
+        error = 100
 
-        iperf_cmd = "iperf3 -c {} -p {} -i 0 -b 30M -u -J {}"\
-                    .format(client, port, '-R' if reverse else "") 
+        while error > 1:
 
-        iperf_res = Popen(iperf_cmd, shell=True, stdout=PIPE)
-        output, _ = iperf_res.communicate()
-        results = json.loads(output)
+            iperf_cmd = "iperf3 -c {} -p {} -i 0 -b {}M -u -J {}"\
+                       .format(client, port, bandwidth,'-R' if reverse else "") 
 
-        iperf_rate = results['end']['streams'][0]['udp']['bits_per_second'] / 10**6
-        iperf_jitter = results['end']['streams'][0]['udp']['jitter_ms']
+            iperf_res = Popen(iperf_cmd, shell=True, stdout=PIPE)
+            output, _ = iperf_res.communicate()
+            results = json.loads(output)
+
+            iperf_rate = results['end']['streams'][0]['udp']['bits_per_second'] / 10**6
+            iperf_jitter = results['end']['streams'][0]['udp']['jitter_ms']
+            error = results['end']['streams'][0]['udp']['lost_percent']
+
+            
+            bandwidth -= 0.5*error
+            if reverse:
+                bandwidth -= 7*error
+            print(bandwidth)
 
         ul_dl = "download" if reverse else "upload"
 

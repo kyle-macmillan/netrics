@@ -45,12 +45,13 @@ def execute():
 
         """ Run iperf3 bandwidth test """
         test.iperf3_bandwidth(client=args.iperf[0], port=args.iperf[1])
+        """ 
         test.iperf3_bandwidth(
                 client=args.iperf[0], port=args.iperf[1], reverse=True)
-
+        """
         """ Upload data to influx server """
-        upload(args.upload[0], args.upload[0], args.upload[1], args.upload[2],
-                args.upload[3], test.results)
+        if args.upload:
+            upload(test.results, test.results)
 
     except KeyboardInterrupt:
         print("\n ******** KEYBOARD INTERRUPT ********** \n")
@@ -65,13 +66,10 @@ def build_parser():
             description='measure network on jetson')
 
     parser.add_argument(
-            '-u',
-            default=[False],
-            nargs = 4,
-            dest = 'upload',
-            action='store',
-            help=("Upload measurements to influx. Usage:"  
-            "'-u [host] [port] [database] [deployment]'")
+            '-u', '--upload',
+            default=False,
+            action='store_true',
+            help=("Upload measurements to infux")
     )
 
     parser.add_argument(
@@ -145,19 +143,20 @@ def build_parser():
     return parser   
 
 
-def upload(upload_results, host, port,database, deployment, measurements):
+def upload(upload_results, measurements):
 
     if not upload_results:
         return
 
+    
     netrc_file = netrc.netrc()
     authTokens = netrc_file.authenticators("influx")
-
-    creds = InfluxDBClient(host=host, port=port, username=authTokens[0],
-                password=authTokens[2], database=database, ssl=True, verify_ssl=True)
+     
+    creds = InfluxDBClient(host='tigerteam.io', port='9999', username=authTokens[0],
+                password=authTokens[2], database='netrics', ssl=True, verify_ssl=True)
 
     creds.write_points([{"measurement": "networks",
-                         "tags"        : {"install": deployment},
+                         "tags"        : {"install": authTokens[1]},
                          "fields"      : measurements,
                          "time"        : datetime.utcnow()
                         }])
