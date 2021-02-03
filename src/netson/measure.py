@@ -13,6 +13,9 @@ import json
 import pandas as pd
 
 from speedtest import Speedtest
+from tinydb import TinyDB, Query, where
+from tinydb.operations import increment
+from tinydb.operations import set as tdb_set
 
 reference_site_dict = {
         "www.google.com"             : "google",
@@ -169,7 +172,7 @@ class Measurements:
             print(f'\n --- Hops to Target ---')
             print("Hops to {}: {}".format(site, self.results[f'hops_to_{label}']))
 
-    def connected_devices_arp(self, run_test, device_file='seen_devices.csv'):
+    def connected_devices_arp(self, run_test):
 
         if not run_test:
             return
@@ -188,32 +191,33 @@ class Measurements:
         arp_res = Popen(arp_cmd, shell=True, stdout=PIPE).stdout.read().decode('utf-8')
 
         devices = set(arp_res.strip().split("\n"))
+        active_devices = [[dev, ts, 1] for dev in devices]
 
-        new_devices = [[dev, ts, 1] for dev in devices]
-        new_devices = pd.DataFrame(columns = ["mac_addr", "last_seen", "N"],
-                                    data = new_devices)
+        db = TinyDB('seen_devices.json')
+        for device in active_devices:
+            mac = Query()
+            if db.contains(where('mac_addr') == device[0]):
+                db.update(increment("n"), where('mac_addr') == device[0])
+                db.update(tdb_set('last_seen', device[1]), 
+                        where('mac_addr') == device[0])
+            else:
+                db.insert({'mac_addr' : device[0], 
+                           'last_seen': device[1],
+                           'n'        : device[2]}) 
 
-        if not os.path.exists(device_file):
-            with open(device_file, "w") as f:
-                f.write("mac_addr, last_seen, N\n")
+        Time = Query()
+        ndev_past_day  = len(db.search(Time.last_seen > (ts - 86400)))
+        ndev_past_week = len(db.search(Time.last_seen > (ts - 86400*7)))
 
-        seen = pd.read_csv(device_file)
-
-        devices = pd.concat([seen, new_devices])
-        devices = devices.groupby("mac_addr").agg({'N' : sum, "last_seen" : max})
-        devices[["last_seen", "N"]].to_csv(device_file, index=True)
-
-        self.results["devices_active"] = new_devices.shape[0]
-        self.results["devices_total"] = devices.shape[0]
-        self.results["devices_1day"] = devices.query(
-                "last_seen > {:d}".format(ts - 86400)).shape[0]
-        self.results["devices_1week"] = devices.query(
-                "last_seen > {:d}".format(ts-86400 * 7)).shape[0]
+        self.results["devices_active"] = len(active_devices)
+        self.results["devices_total"] = db.count(where('n') >= 1)
+        self.results["devices_1day"] = ndev_past_day
+        self.results["devices_1week"] = ndev_past_week
         
         if not self.quiet:
             print(f'\n --- Number of Devices ---')
-            print(f'Number of active devices:        {new_devices.shape[0]}')
-            print(f'Number of total devices:         {devices.shape[0]}')
+            print(f'Number of active devices:        {self.results["devices_active"]}')
+            print(f'Number of total devices:         {self.results["devices_total"]}')
             print(f'Number of devices in last 1 day: {self.results["devices_1day"]}')
             print(f'Number of devices in last week:  {self.results["devices_1week"]}')
 

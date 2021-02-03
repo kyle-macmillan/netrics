@@ -15,6 +15,8 @@ pip3 install speedtest-cli
 pip3 install selenium
 pip3 install influxdb_client
 pip3 install influxdb
+pip3 install tinydb
 
 echo '\n\n --- Adding permissions ---'
-chmod a+rwx seen_devices.csv
+touch seen_devices.json
+chmod a+rwx seen_devices.json
