@@ -13,6 +13,7 @@ import json
 import pandas as pd
 
 from speedtest import Speedtest
+from pathlib import Path
 from tinydb import TinyDB, Query, where
 from tinydb.operations import increment
 from tinydb.operations import set as tdb_set
@@ -38,11 +39,14 @@ class Measurements:
         self.results = {}
         self.quiet = args.quiet
         self.sites = reference_sites
-        self.labels = reference_site_dict
-
-        db = TinyDB('speedtest.json')
-        if len(db.all()) == 0:
-            db.insert({'download': 600, 'upload': 50, 'test': False})
+        self.labels = reference_site_dict 
+        self.speed_db = TinyDB(
+                (Path(__file__).parent).joinpath('databases/speedtest.json'))
+        self.dev_db = TinyDB(
+                (Path(__file__).parent).joinpath('databases/seen_devices.json'))
+        
+        if len(self.speed_db.all()) == 0:
+            self.speed_db.insert({'download': 600, 'upload': 50, 'test': False})
 
         if not self.quiet:
             print("\n --- NETWORK MEASUREMENTS ---")
@@ -58,19 +62,18 @@ class Measurements:
         self.sites = list(self.labels.keys())
 
     def update_max_speed(self, measured_down, measured_up):
-        db = TinyDB('speedtest.json')
-        max_speed = db.all()
+        max_speed = self.speed_db.all()
         max_down = max(measured_down, max_speed[0]['download'])
         max_up = max(measured_up, max_speed[0]['upload'])
 
         if max_speed[0]['test']:
-            db.update({'download': max_down})
-            db.update({'upload': max_up})
+            self.speed_db.update({'download': max_down})
+            self.speed_db.update({'upload': max_up})
         else:
-            db.update({'download': measured_down})
-            db.update({'upload': measured_up})
+            self.speed_db.update({'download': measured_down})
+            self.speed_db.update({'upload': measured_up})
 
-        db.update({'test':True})
+        self.speed_db.update({'test':True})
 
     def speed(self, run_test):
         
@@ -217,24 +220,23 @@ class Measurements:
         devices = set(arp_res.strip().split("\n"))
         active_devices = [[dev, ts, 1] for dev in devices]
 
-        db = TinyDB('seen_devices.json')
+        
         for device in active_devices:
-            mac = Query()
-            if db.contains(where('mac_addr') == device[0]):
-                db.update(increment("n"), where('mac_addr') == device[0])
-                db.update(tdb_set('last_seen', device[1]), 
+            if self.dev_db.contains(where('mac_addr') == device[0]):
+                self.dev_db.update(increment("n"), where('mac_addr') == device[0])
+                self.dev_db.update(tdb_set('last_seen', device[1]), 
                         where('mac_addr') == device[0])
             else:
-                db.insert({'mac_addr' : device[0], 
-                           'last_seen': device[1],
-                           'n'        : device[2]}) 
+                self.dev_db.insert({'mac_addr' : device[0], 
+                                    'last_seen': device[1],
+                                    'n'        : device[2]}) 
 
         Time = Query()
-        ndev_past_day  = len(db.search(Time.last_seen > (ts - 86400)))
-        ndev_past_week = len(db.search(Time.last_seen > (ts - 86400*7)))
+        ndev_past_day  = len(self.dev_db.search(Time.last_seen > (ts - 86400)))
+        ndev_past_week = len(self.dev_db.search(Time.last_seen > (ts - 86400*7)))
 
         self.results["devices_active"] = len(active_devices)
-        self.results["devices_total"] = db.count(where('n') >= 1)
+        self.results["devices_total"] = self.dev_db.count(where('n') >= 1)
         self.results["devices_1day"] = ndev_past_day
         self.results["devices_1week"] = ndev_past_week
         
@@ -250,10 +252,9 @@ class Measurements:
         if not client:
             return
 
-        db = TinyDB('speedtest.json')
-        speed = db.all()
+        speed = self.speed_db.all()
 
-        print('input_speed', speed)
+
         measured_bw = {'upload': 0, 'download': 0}
         measured_jitter = {'upload' : 0, 'download' :0}
 
@@ -261,7 +262,6 @@ class Measurements:
             reverse = False
             bandwidth = speed[0][direction] + 10
             if direction == 'download':
-                print('down bw', bandwidth)
                 bandwidth += 40
                 reverse = True
             
@@ -273,8 +273,8 @@ class Measurements:
             measured_bw[direction]     = iperf_res.split()[6]
             measured_jitter[direction] = iperf_res.split()[8]
 
-            self.results[f'iperf_udp_{direction}'] = measured_bw['download']
-            self.results[f'iperf_udp_{direction}_jitter_ms'] = measured_jitter['download']
+            self.results[f'iperf_udp_{direction}'] = float(measured_bw[direction])
+            self.results[f'iperf_udp_{direction}_jitter_ms'] = float(measured_jitter[direction])
 
             if not self.quiet:
                 if direction == 'upload' : print('\n --- iperf Bandwidth and Jitter ---')
@@ -282,4 +282,5 @@ class Measurements:
                 print(f'{direction} jitter: {measured_jitter[direction]} ms')
 
 
-        self.update_max_speed(float(measured_bw['download']), float(measured_bw['upload']))
+        self.update_max_speed(float(measured_bw['download']),
+                float(measured_bw['upload']))

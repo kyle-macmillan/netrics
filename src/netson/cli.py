@@ -1,7 +1,6 @@
 """ netson command-line interface entry-point """
 
 import argparse
-import pathlib
 import re
 import time
 import netrc
@@ -10,11 +9,11 @@ from datetime import datetime
 from influxdb_client.client.write_api import SYNCHRONOUS
 from influxdb import InfluxDBClient
 
+
 from measure import Measurements
 
 def execute():
     """ Execute the netson CLI command """
-
     try:
         parser = build_parser()
 

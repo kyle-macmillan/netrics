@@ -13,6 +13,8 @@ cd iperf-3.9
 make
 make install
 
+apt remove libiperf0
+
 echo '\n\n--- Installing pip3 ---'
 apt-get -q -y install python3-pip
 
@@ -23,10 +25,3 @@ pip3 install influxdb_client
 pip3 install influxdb
 pip3 install tinydb
 
-echo 
-
-echo '\n\n --- Adding permissions ---'
-touch ~/netrics/src/seen_devices.json
-touch ~/netrics/src/speedtest.json
-chmod a+rw ~/netrics/src/speedtest.json
-chmod a+rw ~/netrics/src/seen_devices.json
