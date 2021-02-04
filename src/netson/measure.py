@@ -40,6 +40,10 @@ class Measurements:
         self.sites = reference_sites
         self.labels = reference_site_dict
 
+        db = TinyDB('speedtest.json')
+        if len(db.all()) == 0:
+            db.insert({'download': 600, 'upload': 50, 'test': False})
+
         if not self.quiet:
             print("\n --- NETWORK MEASUREMENTS ---")
 
@@ -53,6 +57,21 @@ class Measurements:
 
         self.sites = list(self.labels.keys())
 
+    def update_max_speed(self, measured_down, measured_up):
+        db = TinyDB('speedtest.json')
+        max_speed = db.all()
+        max_down = max(measured_down, max_speed[0]['download'])
+        max_up = max(measured_up, max_speed[0]['upload'])
+
+        if max_speed[0]['test']:
+            db.update({'download': max_down})
+            db.update({'upload': max_up})
+        else:
+            db.update({'download': measured_down})
+            db.update({'upload': measured_up})
+
+        db.update({'test':True})
+
     def speed(self, run_test):
         
         if not run_test:
@@ -63,14 +82,19 @@ class Measurements:
         s.download()
         s.upload()
         test_results = s.results.dict()
+        
+        download_speed = test_results["download"] / 1e6
+        upload_speed = test_results["upload"] / 1e6
 
-        self.results["speedtest_download"] = test_results["download"] / 1e6
-        self.results["speedtest_upload"] = test_results["upload"] / 1e6
+        self.update_max_speed(float(download_speed), float(upload_speed)) 
+
+        self.results["speedtest_download"] = download_speed
+        self.results["speedtest_upload"] = upload_speed
 
         if not self.quiet:
             print('\n --- Ookla speed tests ---')
-            print(f'Download: {self.results["speedtest_download"]} Mb/s')
-            print(f'Upload:   {self.results["speedtest_upload"]} Mb/s')
+            print(f'Download: {download_speed} Mb/s')
+            print(f'Upload:   {upload_speed} Mb/s')
 
     def ping_latency(self, run_test):
 
@@ -221,43 +245,41 @@ class Measurements:
             print(f'Number of devices in last 1 day: {self.results["devices_1day"]}')
             print(f'Number of devices in last week:  {self.results["devices_1week"]}')
 
-
-
-    def iperf3_bandwidth(self, client, port, reverse=False):
-         
+    def iperf3_bandwidth(self, client, port):
+        
         if not client:
             return
-    
-        bandwidth = self.results["speedtest_upload"]
-        if reverse:
-            bandwidth = self.results["speedtest_download"]
-        error = 100
 
-        while error > 1:
+        db = TinyDB('speedtest.json')
+        speed = db.all()
 
-            iperf_cmd = "iperf3 -c {} -p {} -i 0 -b {}M -u -J {}"\
-                       .format(client, port, bandwidth,'-R' if reverse else "") 
+        print('input_speed', speed)
+        measured_bw = {'upload': 0, 'download': 0}
+        measured_jitter = {'upload' : 0, 'download' :0}
 
-            iperf_res = Popen(iperf_cmd, shell=True, stdout=PIPE)
-            output, _ = iperf_res.communicate()
-            results = json.loads(output)
-
-            iperf_rate = results['end']['streams'][0]['udp']['bits_per_second'] / 10**6
-            iperf_jitter = results['end']['streams'][0]['udp']['jitter_ms']
-            error = results['end']['streams'][0]['udp']['lost_percent']
-
+        for direction, value in measured_bw.items():
+            reverse = False
+            bandwidth = speed[0][direction] + 10
+            if direction == 'download':
+                print('down bw', bandwidth)
+                bandwidth += 40
+                reverse = True
             
-            bandwidth -= 0.5*error
-            if reverse:
-                bandwidth -= 7*error
-            print(bandwidth)
+            iperf_cmd = "iperf3 -c {} -p {} -u -i 0 -b {}M {} | awk 'NR=={}'"\
+                .format(client, port, bandwidth,'-R' if reverse else "", 
+                        10 if reverse else 8) 
+            iperf_res = Popen(iperf_cmd, shell=True, stdout=PIPE).stdout.read().decode('utf-8')
 
-        ul_dl = "download" if reverse else "upload"
+            measured_bw[direction]     = iperf_res.split()[6]
+            measured_jitter[direction] = iperf_res.split()[8]
 
-        self.results[f'iperf_udp_{ul_dl}'] = iperf_rate
-        self.results[f'iperf_udp_{ul_dl}_jitter_ms'] = iperf_jitter
+            self.results[f'iperf_udp_{direction}'] = measured_bw['download']
+            self.results[f'iperf_udp_{direction}_jitter_ms'] = measured_jitter['download']
 
-        if not self.quiet:
-            if not reverse: print('\n --- iperf Bandwidth and Jitter ---')
-            print(f'{ul_dl} bandwidth: {iperf_rate} Mb/s')
-            print(f'{ul_dl} jitter: {iperf_jitter} ms')
+            if not self.quiet:
+                if direction == 'upload' : print('\n --- iperf Bandwidth and Jitter ---')
+                print(f'{direction} bandwidth: {measured_bw[direction]} Mb/s')
+                print(f'{direction} jitter: {measured_jitter[direction]} ms')
+
+
+        self.update_max_speed(float(measured_bw['download']), float(measured_bw['upload']))

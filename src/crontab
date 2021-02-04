@@ -1,2 +1,0 @@
-m   h dom mon dow command
-*/1 *  *   *   *  . /env/netrics/bin/activate ; python3 ~/Documents/netrics/src/netson -d -p -n -t -b -u tigerteam.io 9999 netrics macmillan 

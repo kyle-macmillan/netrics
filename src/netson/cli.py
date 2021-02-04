@@ -45,10 +45,7 @@ def execute():
 
         """ Run iperf3 bandwidth test """
         test.iperf3_bandwidth(client=args.iperf[0], port=args.iperf[1])
-        """ 
-        test.iperf3_bandwidth(
-                client=args.iperf[0], port=args.iperf[1], reverse=True)
-        """
+
         """ Upload data to influx server """
         if args.upload:
             upload(test.results, test.results)
