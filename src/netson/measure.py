@@ -213,7 +213,7 @@ class Measurements:
         nmap_cmd = f'nmap -sn {subnet}'
         Popen(nmap_cmd, shell=True, stdout=PIPE)
 
-        arp_cmd = ("arp -e -i eth0 | grep : | grep -v '_gateway' | tr -s ' ' | "
+        arp_cmd = ("/usr/sbin/arp -e -i eth0 | grep : | grep -v '_gateway' | tr -s ' ' | "
                 "cut -f3 -d' ' | sort | uniq")
         arp_res = Popen(arp_cmd, shell=True, stdout=PIPE).stdout.read().decode('utf-8')
 
