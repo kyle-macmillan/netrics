@@ -1,4 +1,6 @@
 **/__pycache__/
 *.pyc
 
+**/seen_devices.json
+**/speedtest.json
 
