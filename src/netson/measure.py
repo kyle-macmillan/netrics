@@ -206,14 +206,14 @@ class Measurements:
 
         ts = int(time.time())
 
-        route_cmd = "ip r | awk 'NR==2' | awk '{print $1;}'"
+        route_cmd = "ip r | grep /24 | awk '{print $1;}'"
         subnet = Popen(route_cmd, shell=True, 
                 stdout=PIPE).stdout.read().decode('utf-8')
 
         nmap_cmd = f'nmap -sn {subnet}'
         Popen(nmap_cmd, shell=True, stdout=PIPE)
 
-        arp_cmd = ("/usr/sbin/arp -e -i eth0 | grep : | grep -v '_gateway' | tr -s ' ' | "
+        arp_cmd = ("/usr/sbin/arp -i eth0 -n | grep : | grep -v '_gateway' | tr -s ' ' | "
                 "cut -f3 -d' ' | sort | uniq")
         arp_res = Popen(arp_cmd, shell=True, stdout=PIPE).stdout.read().decode('utf-8')
 
@@ -231,10 +231,11 @@ class Measurements:
                                     'last_seen': device[1],
                                     'n'        : device[2]}) 
 
-        Time = Query()
-        ndev_past_day  = len(self.dev_db.search(Time.last_seen > (ts - 86400)))
-        ndev_past_week = len(self.dev_db.search(Time.last_seen > (ts - 86400*7)))
-
+        print(self.dev_db.all())
+        ndev_past_day  = len(self.dev_db.search(where('last_seen') > (ts - 86400)))
+        ndev_past_week = len(self.dev_db.search(where('last_seen') > (ts - 86400*7)))
+        
+        print(ndev_past_day)
         self.results["devices_active"] = len(active_devices)
         self.results["devices_total"] = self.dev_db.count(where('n') >= 1)
         self.results["devices_1day"] = ndev_past_day

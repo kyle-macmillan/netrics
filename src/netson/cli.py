@@ -47,6 +47,7 @@ def execute():
 
         """ Upload data to influx server """
         if args.upload:
+            print(test.results)
             upload(test.results, test.results)
 
     except KeyboardInterrupt:
