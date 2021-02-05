@@ -265,7 +265,7 @@ class Measurements:
                 bandwidth += 40
                 reverse = True
             
-            iperf_cmd = "iperf3 -c {} -p {} -u -i 0 -b {}M {} | awk 'NR=={}'"\
+            iperf_cmd = "/usr/local/bin/iperf3 -c {} -p {} -u -i 0 -b {}M {} | awk 'NR=={}'"\
                 .format(client, port, bandwidth,'-R' if reverse else "", 
                         10 if reverse else 8) 
             iperf_res = Popen(iperf_cmd, shell=True, stdout=PIPE).stdout.read().decode('utf-8')
