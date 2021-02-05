@@ -13,7 +13,7 @@ cd iperf-3.9
 make
 make install
 
-apt remove libiperf0
+apt -y remove libiperf0
 
 echo '\n\n--- Installing pip3 ---'
 apt-get -q -y install python3-pip
