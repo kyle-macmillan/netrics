@@ -4,7 +4,7 @@ echo '--- Updating system ---'
 apt update -q && apt upgrade -q -y
 
 echo '\n\n--- Installing Measurement Dependencies ---'
-apt-get -q -y install speedtest-cli net-tools chromium-chromedriver nmap traceroute
+apt-get -q -y install speedtest-cli net-tools chromium-chromedriver nmap traceroute jq
 apt-get -q -y install  dnsutils
 wget https://downloads.es.net/pub/iperf/iperf-3.9.tar.gz
 tar -xvf iperf-3.9.tar.gz
